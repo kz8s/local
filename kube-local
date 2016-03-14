@@ -2,7 +2,7 @@
 
 PORT=8080
 K8S_VERSION=1.1.7
-PREREQUISITES="docker docker-compose docker-machine kubectl"
+PREREQUISITES="docker docker-compose kubectl"
 PROJECT_NAME=kz8slocal
 
 DOCKER_COMPOSE="docker-compose --project-name $PROJECT_NAME"
@@ -70,8 +70,17 @@ proxy:
 EOF
 }
 
-# Kube API is accessible on host at 8080, use ssh tunnel
+
+
 function tunnel-up {
+  echo "❤ Checking for active docker-machine"
+
+  which docker-machine
+  if [ $? -ne 0 ]; then
+    echo "✓ docker-machine not found, skipping ssh tunnel setup"
+    return
+  fi
+
   echo "❤ Setting up ssh tunnel to docker host on port $PORT"
   local machine=$(docker-machine active)
 
@@ -98,7 +107,7 @@ function tunnel-down {
 function poll-for-k8s {
   echo "❤ Commenced polling Kubernetes api-server for life, this may take a minute"
   until curl -s http://localhost:$PORT
-    do echo "❤ retrying Kubernetes api-server..." && sleep 7
+    do echo "❤ Retrying Kubernetes api-server..." && sleep 7
   done
   curl -s http://localhost:$PORT/version
   printf "\n"; echo "✓ Successfully connected to Kubernetes api-server"
