@@ -1,0 +1,157 @@
+#!/bin/bash -eu
+
+PORT=8080
+K8S_VERSION=1.1.7
+PREREQUISITES="docker docker-compose docker-machine kubectl"
+PROJECT_NAME=kz8slocal
+
+DOCKER_COMPOSE="docker-compose --project-name $PROJECT_NAME"
+KUBECTL="kubectl -s http://127.0.0.1:$PORT"
+
+function version { cat <<EOF
+$0 version 1.0.0
+EOF
+  exit 0
+}
+
+function usage { cat <<EOF
+Usage: $0 COMMAND
+
+Run Kubernetes locally in docker.
+
+Commands:
+    up       Create and start a local Kubernetes installation
+    down     Stop and remove a running local Kubernetes installation
+    help     Print usage
+    version  Print version information and quit
+
+EOF
+  exit ${1:-0}
+}
+
+function assert-prereqs {
+  for prereq in $PREREQUISITES; do
+    command -v "$prereq" >/dev/null 2>&1 || { echo "✗ '$prereq' not found. Aborting!" >&2; exit 1; }
+  done
+}
+
+function docker-running {
+  docker info >/dev/null 2>&1 || { echo "✗ No running docker engine. Aborting!" >&2; exit 1; }
+}
+
+function compose-file { cat << EOF
+etcd:
+  image: gcr.io/google_containers/etcd:2.0.12
+  net: host
+  command: /usr/local/bin/etcd --addr=127.0.0.1:4001 --bind-addr=0.0.0.0:4001 --data-dir=/var/etcd/data
+
+kubernetes:
+  image: gcr.io/google_containers/hyperkube:v$K8S_VERSION
+  net: host
+  pid: host
+  privileged: true
+  volumes:
+    - /:/rootfs:ro
+    - /sys:/sys:ro
+    - /dev:/dev
+    - /var/lib/docker/:/var/lib/docker:ro
+    - /var/lib/kubelet/:/var/lib/kubelet:rw
+    - /var/run:/var/run:rw
+  command: /hyperkube kubelet --containerized --hostname-override="127.0.0.1" --address="0.0.0.0" --api-servers=http://localhost:8080 --config=/etc/kubernetes/manifests
+
+proxy:
+  image: gcr.io/google_containers/hyperkube:v$K8S_VERSION
+  net: host
+  privileged: true
+  command: /hyperkube proxy --master=http://127.0.0.1:8080 --v=2
+EOF
+}
+
+# Kube API is accessible on host at 8080, use ssh tunnel
+function tunnel-up {
+  echo "❤ Setting up ssh tunnel to docker host on port $PORT"
+  local machine=$(docker-machine active)
+
+  if [ -z "$machine" ]; then
+    echo "✗ WARNING: ssh tunnel *not* enabled. Could not find active docker machine '$machine'" >&2
+    return
+  fi
+  echo "✓ Found active docker machine '$machine'"
+
+  if pgrep -f "ssh.*$PORT:localhost" > /dev/null; then
+    echo "✗ WARNING: There is an existing active ssh tunnel on port $PORT"
+    return
+  fi
+  echo "✓ No existing ssh tunnel found"
+
+  docker-machine ssh "$machine" -fNL "$PORT:localhost:$PORT"
+  echo "✓ Configured ssh tunnel on port $PORT to docker machine '$machine'"
+}
+
+function tunnel-down {
+  pkill -f "ssh.*docker.*$PORT:localhost:$PORT"
+}
+
+function poll-for-k8s {
+  echo "❤ Commenced polling Kubernetes api-server for life, this may take a minute"
+  until curl -s http://localhost:$PORT
+    do echo "❤ retrying Kubernetes api-server..." && sleep 7
+  done
+  curl -s http://localhost:$PORT/version
+  printf "\n"; echo "✓ Successfully connected to Kubernetes api-server"
+}
+
+function k8s-up {
+  echo "❤ Spinning up Kubernetes"
+  compose-file | $DOCKER_COMPOSE --file - up -d
+  echo "✓ Started Kubernetes"
+}
+
+function k8s-down {
+  echo "❤ Stopping docker-compose containers"
+  $DOCKER_COMPOSE stop
+  echo "❤ Removing docker-compose containers and volumes"
+  $DOCKER_COMPOSE rm --force -v
+}
+
+function remove-k8s-containers {
+  echo "❤ Looking for local Kubernetes containers to remove"
+
+  containers=$(docker ps --all --filter "name=k8s_" --quiet)
+
+  if [ -z "$containers" ]; then
+    echo "✗ WARNING: No kubernetes (k8s_*) containers to remove"
+    return
+  fi
+
+  docker stop $containers >/dev/null
+  docker rm --force --volumes $containers >/dev/null
+
+  echo "✓ Removed local Kubernetes containers"
+}
+
+set +u
+if [ -z "$1" ]; then usage; fi
+
+assert-prereqs  # check pre-reqs
+docker-running  # docker engine running ?
+
+case "$1" in
+  up)
+    k8s-up
+    tunnel-up
+    poll-for-k8s
+    ;;
+
+  down)
+    tunnel-down
+    k8s-down
+    remove-k8s-containers
+    ;;
+
+  help) usage ;;
+
+  version) version ;;
+
+  *) usage 1
+esac
