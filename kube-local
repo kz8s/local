@@ -158,6 +158,8 @@ case "$1" in
     k8s-up
     tunnel-up
     poll-for-k8s
+    kube-system-namespace
+    kube-dns
     ;;
 
   down)
@@ -165,6 +167,8 @@ case "$1" in
     k8s-down
     remove-k8s-containers
     ;;
+
+  kubeconfig) $1 ;;
 
   help) usage ;;
 
