@@ -1,7 +1,7 @@
 machine:
   environment:
-    - K8S_VER: v1.1.7
-    - K8S_URL: https://storage.googleapis.com/kubernetes-release/release
+    K8S_VER: v1.1.7
+    K8S_URL: https://storage.googleapis.com/kubernetes-release/release
   services:
     - docker
 
