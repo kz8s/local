@@ -147,6 +147,24 @@ function remove-k8s-containers {
   echo "✓ Removed local Kubernetes containers"
 }
 
+function kubeconfig { cat << EOF > kubeconfig
+apiVersion: v1
+kind: Config
+clusters:
+  - cluster:
+      server: http://$DOCKER_HOST_IP:$PORT
+    name: local
+contexts:
+  - context:
+      cluster: local
+      user: ""
+    name: local
+current-context: local
+preferences: {}
+users: []
+EOF
+}
+
 set +u
 if [ -z "$1" ]; then usage; fi
 
