@@ -6,7 +6,7 @@ PREREQUISITES="docker docker-compose kubectl"
 PROJECT_NAME=kz8slocal
 
 DOCKER_COMPOSE="docker-compose --project-name $PROJECT_NAME"
-KUBECTL="kubectl -s http://127.0.0.1:$PORT"
+KUBECTL="kubectl -s http://127.0.0.1:$PORT --context=\"\" --cluster=\"\""
 
 function version { cat <<EOF
 $0 version 1.0.0
