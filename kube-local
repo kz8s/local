@@ -75,8 +75,6 @@ proxy:
 EOF
 }
 
-
-
 function tunnel-up {
   echo "❤ Checking for active docker-machine"
 
@@ -145,6 +143,15 @@ function remove-k8s-containers {
   docker rm --force --volumes $containers >/dev/null
 
   echo "✓ Removed local Kubernetes containers"
+}
+
+function kube-system-namespace {
+  $KUBECTL create -f - <<EOF
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: kube-system
+EOF
 }
 
 function kubeconfig { cat << EOF > kubeconfig
