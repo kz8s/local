@@ -25,13 +25,15 @@ Usage: $0 COMMAND
 Run Kubernetes locally in docker.
 
 Commands:
-    down     Stop and remove a running local Kubernetes installation
-    events   Receive real time events from containers
-    help     Print usage
-    logs     View output from containers
-    ps       List containers
-    up       Create and start a local Kubernetes installation
-    version  Print version information and quit
+    down        Stop and remove a running local Kubernetes installation
+    events      Receive real time events from containers
+    help        Print usage
+    kubeconfig  Create kubeconfig file in current directory
+    kubectl     Call kubectl with context for local Kubernetes
+    logs        View output from containers
+    ps          List containers
+    up          Create and start a local Kubernetes installation
+    version     Print version information and quit
 
 EOF
   exit ${1:-0}
