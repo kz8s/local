@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -e
 
 PORT=8080
 K8S_VERSION=1.1.7
@@ -156,6 +156,37 @@ metadata:
 EOF
 }
 
+function kube-dns {
+  $KUBECTL --namespace=kube-system create -f - <<EOF
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: kube-dns
+  namespace: kube-system
+subsets:
+- addresses:
+  - ip: $DOCKER_HOST_IP
+  ports:
+  - port: 53
+    protocol: UDP
+    name: dns
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: kube-dns
+  namespace: kube-system
+spec:
+  clusterIP: 10.0.0.10
+  ports:
+  - name: dns
+    port: 53
+    protocol: UDP
+EOF
+}
+
 function kubeconfig { cat << EOF > kubeconfig
 apiVersion: v1
 kind: Config
@@ -174,7 +205,6 @@ users: []
 EOF
 }
 
-set +u
 if [ -z "$1" ]; then usage; fi
 
 assert-prereqs  # check pre-reqs
