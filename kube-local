@@ -8,10 +8,12 @@ PROJECT_NAME=kz8slocal
 DOCKER_COMPOSE="docker-compose --project-name $PROJECT_NAME"
 KUBECTL="kubectl -s http://127.0.0.1:$PORT --context=\"\" --cluster=\"\""
 
+echo "❤ Determining docker host ip"
 DOCKER_HOST_IP=$(echo $DOCKER_HOST | awk -F'[/:]' '{print $4}')
 : ${DOCKER_HOST_IP:=$(ifconfig docker0 \
     | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' \
     | grep -Eo '([0-9]*\.){3}[0-9]*')}
+echo "✓ Docker host ip detected: $DOCKER_HOST_IP"
 
 function version { cat <<EOF
 $0 version 1.0.0
