@@ -5,7 +5,7 @@ K8S_VERSION=v1.1.8
 PREREQUISITES="docker docker-compose kubectl"
 PROJECT_NAME=kz8slocal
 
-DOCKER_COMPOSE="docker-compose --project-name $PROJECT_NAME"
+DOCKER_COMPOSE="compose-file | docker-compose --file - --project-name $PROJECT_NAME"
 KUBECTL="kubectl -s http://127.0.0.1:$PORT --context=\"\" --cluster=\"\""
 
 DOCKER_HOST_IP=$(echo $DOCKER_HOST | awk -F'[/:]' '{print $4}')
@@ -122,7 +122,7 @@ function poll-for-k8s {
 
 function k8s-up {
   echo "❤ Spinning up Kubernetes"
-  compose-file | $DOCKER_COMPOSE --file - up -d
+  $DOCKER_COMPOSE up -d
   echo "✓ Started Kubernetes"
 }
 
