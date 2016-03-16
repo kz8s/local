@@ -5,7 +5,7 @@ K8S_VERSION=v1.1.8
 PREREQUISITES="docker docker-compose kubectl"
 PROJECT_NAME=kz8slocal
 
-DOCKER_COMPOSE="echo compose-file | docker-compose --file - --project-name $PROJECT_NAME"
+DOCKER_COMPOSE="docker-compose --project-name $PROJECT_NAME"
 KUBECTL="kubectl -s http://127.0.0.1:$PORT --context=\"\" --cluster=\"\""
 
 DOCKER_HOST_IP=$(echo $DOCKER_HOST | awk -F'[/:]' '{print $4}')
@@ -122,15 +122,15 @@ function poll-for-k8s {
 
 function k8s-up {
   echo "❤ Spinning up Kubernetes"
-  $DOCKER_COMPOSE up -d
+  (compose-file) | $DOCKER_COMPOSE --file - up -d
   echo "✓ Started Kubernetes"
 }
 
 function k8s-down {
   echo "❤ Stopping docker-compose containers"
-  docker-compose --project-name $PROJECT_NAME stop
+  (compose-file) | $DOCKER_COMPOSE --file - stop
   echo "❤ Removing docker-compose containers and volumes"
-  docker-compose --project-name $PROJECT_NAME rm --force -v
+  (compose-file) | $DOCKER_COMPOSE --file - rm --force -v
 }
 
 function remove-k8s-containers {
@@ -257,7 +257,7 @@ case "$1" in
 
   version) version ;;
 
-  events|logs|ps) $DOCKER_COMPOSE $1 ;;
+  events|logs|ps) (compose-file) | $DOCKER_COMPOSE --file - $1 ;;
 
   *) usage 1
 esac
