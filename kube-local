@@ -79,6 +79,7 @@ proxy:
 EOF
 }
 
+# TODO: change tunnel detection logic to account for docker-machine present on linux - eg ubuntu
 function tunnel-up {
   echo "❤ Checking for active docker-machine"
 
