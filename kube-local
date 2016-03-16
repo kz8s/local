@@ -107,7 +107,7 @@ function tunnel-up {
 }
 
 function tunnel-down {
-  pkill -f "ssh.*docker.*$PORT:localhost:$PORT"
+  pkill -f "ssh.*docker.*$PORT:localhost:$PORT" ||:
 }
 
 function poll-for-k8s {
