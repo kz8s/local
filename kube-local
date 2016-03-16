@@ -5,7 +5,7 @@ K8S_VERSION=v1.1.8
 PREREQUISITES="docker docker-compose kubectl"
 PROJECT_NAME=kz8slocal
 
-DOCKER_COMPOSE="compose-file | docker-compose --file - --project-name $PROJECT_NAME"
+DOCKER_COMPOSE="echo compose-file | docker-compose --file - --project-name $PROJECT_NAME"
 KUBECTL="kubectl -s http://127.0.0.1:$PORT --context=\"\" --cluster=\"\""
 
 DOCKER_HOST_IP=$(echo $DOCKER_HOST | awk -F'[/:]' '{print $4}')
@@ -128,9 +128,9 @@ function k8s-up {
 
 function k8s-down {
   echo "❤ Stopping docker-compose containers"
-  $DOCKER_COMPOSE stop
+  docker-compose --project-name $PROJECT_NAME stop
   echo "❤ Removing docker-compose containers and volumes"
-  $DOCKER_COMPOSE rm --force -v
+  docker-compose --project-name $PROJECT_NAME rm --force -v
 }
 
 function remove-k8s-containers {
