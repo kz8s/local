@@ -57,7 +57,7 @@ etcd:
   command: /usr/local/bin/etcd --addr=127.0.0.1:4001 --bind-addr=0.0.0.0:4001 --data-dir=/var/etcd/data
 
 kubernetes:
-  image: gcr.io/google_containers/hyperkube:v$K8S_VERSION
+  image: gcr.io/google_containers/hyperkube:$K8S_VERSION
   net: host
   pid: host
   privileged: true
@@ -71,7 +71,7 @@ kubernetes:
   command: /hyperkube kubelet --containerized --hostname-override="127.0.0.1" --address="0.0.0.0" --api-servers=http://localhost:8080 --config=/etc/kubernetes/manifests
 
 proxy:
-  image: gcr.io/google_containers/hyperkube:v$K8S_VERSION
+  image: gcr.io/google_containers/hyperkube:$K8S_VERSION
   net: host
   privileged: true
   command: /hyperkube proxy --master=http://127.0.0.1:8080 --v=2
