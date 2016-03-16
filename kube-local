@@ -25,6 +25,7 @@ Usage: $0 COMMAND
 Run Kubernetes locally in docker.
 
 Commands:
+    busybox     Create busybox pod for testing
     down        Stop and remove a running local Kubernetes installation
     events      Receive real time events from containers
     help        Print usage
@@ -205,6 +206,24 @@ users: []
 EOF
 }
 
+function busybox { $KUBECTL create -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+  namespace: default
+spec:
+  containers:
+  - image: busybox
+    command:
+      - sleep
+      - "3600"
+    imagePullPolicy: IfNotPresent
+    name: busybox
+  restartPolicy: Always
+EOF
+}
+
 if [ -z "$1" ]; then usage; fi
 
 assert-prereqs  # check pre-reqs
@@ -224,6 +243,8 @@ case "$1" in
     k8s-down
     remove-k8s-containers
     ;;
+
+  busybox) $1 ;;
 
   kubeconfig) $1 ;;
 
