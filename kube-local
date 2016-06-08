@@ -13,6 +13,8 @@ DOCKER_HOST_IP=$(echo $DOCKER_HOST | awk -F'[/:]' '{print $4}')
     | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' \
     | grep -Eo '([0-9]*\.){3}[0-9]*')}
 
+DOCKER_MACHINE_ACTIVE=$(docker-machine active)
+
 function version { cat <<EOF
 $0 version 1.0.0
 EOF
@@ -88,11 +90,11 @@ function tunnel-up {
   echo "❤ Setting up ssh tunnel to docker host on port $API_PORT"
   local machine=$(docker-machine active)
 
-  if [ -z "$machine" ]; then
-    echo "✗ WARNING: ssh tunnel *not* enabled. Could not find active docker machine '$machine'" >&2
+  if [ -z "$DOCKER_MACHINE_ACTIVE" ]; then
+    echo "✗ WARNING: ssh tunnel *not* enabled. Could not find active docker machine '$DOCKER_MACHINE_ACTIVE'" >&2
     return
   fi
-  echo "✓ Found active docker machine '$machine'"
+  echo "✓ Found active docker machine '$DOCKER_MACHINE_ACTIVE'"
 
   if pgrep -f "ssh.*$API_PORT:localhost" > /dev/null; then
     echo "✗ WARNING: There is an existing active ssh tunnel on port $API_PORT"
@@ -100,7 +102,7 @@ function tunnel-up {
   fi
   echo "✓ No existing ssh tunnel found"
 
-  docker-machine ssh "$machine" -fNL "$API_PORT:localhost:$API_PORT"
+  docker-machine ssh "$DOCKER_MACHINE_ACTIVE" -fNL "$API_PORT:localhost:$API_PORT"
   echo "✓ Configured ssh tunnel on port $API_PORT to docker machine '$machine'"
 }
 
@@ -333,9 +335,10 @@ EOF
 }
 
 
-function clean-docker-machine {
-  machine=$(docker-machine active)
-  ssh `docker-machine ip $machine` -ldocker -i ~/.docker/machine/machines/$machine/id_rsa -tt << EOF
+function clean-docker-machine { ssh $DOCKER_HOST_IP \
+  -ldocker \
+  -i ~/.docker/machine/machines/$DOCKER_MACHINE_ACTIVE/id_rsa \
+  -tt << EOF
 sudo umount \$(cat /proc/mounts | grep /var/lib/kubelet | awk '{print \$2}')
 sudo rm -rf /var/lib/kubelet
 exit
