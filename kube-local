@@ -332,6 +332,18 @@ spec:
 EOF
 }
 
+
+function clean-docker-machine {
+  machine=$(docker-machine active)
+  ssh `docker-machine ip $machine` -ldocker -i ~/.docker/machine/machines/$machine/id_rsa -tt << EOF
+sudo umount \$(cat /proc/mounts | grep /var/lib/kubelet | awk '{print \$2}')
+sudo rm -rf /var/lib/kubelet
+exit
+EOF
+}
+
+# begin work
+
 if [ -z "$1" ]; then usage; fi
 
 assert-prereqs  # check pre-reqs
@@ -350,6 +362,7 @@ case "$1" in
     tunnel-down
     k8s-down
     remove-k8s-containers
+    clean-docker-machine
     ;;
 
   busybox) $1 ;;
