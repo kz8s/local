@@ -1,12 +1,12 @@
 #!/bin/bash -e
 
-PORT=8080
+API_PORT=8080
 K8S_VERSION=v1.2.4
 PREREQUISITES="docker docker-compose kubectl"
 PROJECT_NAME=kz8slocal
 
 DOCKER_COMPOSE="docker-compose --project-name $PROJECT_NAME"
-KUBECTL="kubectl -s http://127.0.0.1:$PORT --context=\"\" --cluster=\"\""
+KUBECTL="kubectl -s http://127.0.0.1:$API_PORT --context=\"\" --cluster=\"\""
 
 DOCKER_HOST_IP=$(echo $DOCKER_HOST | awk -F'[/:]' '{print $4}')
 : ${DOCKER_HOST_IP:=$(ifconfig docker0 \
@@ -85,7 +85,7 @@ function tunnel-up {
     return
   fi
 
-  echo "❤ Setting up ssh tunnel to docker host on port $PORT"
+  echo "❤ Setting up ssh tunnel to docker host on port $API_PORT"
   local machine=$(docker-machine active)
 
   if [ -z "$machine" ]; then
@@ -94,26 +94,26 @@ function tunnel-up {
   fi
   echo "✓ Found active docker machine '$machine'"
 
-  if pgrep -f "ssh.*$PORT:localhost" > /dev/null; then
-    echo "✗ WARNING: There is an existing active ssh tunnel on port $PORT"
+  if pgrep -f "ssh.*$API_PORT:localhost" > /dev/null; then
+    echo "✗ WARNING: There is an existing active ssh tunnel on port $API_PORT"
     return
   fi
   echo "✓ No existing ssh tunnel found"
 
-  docker-machine ssh "$machine" -fNL "$PORT:localhost:$PORT"
-  echo "✓ Configured ssh tunnel on port $PORT to docker machine '$machine'"
+  docker-machine ssh "$machine" -fNL "$API_PORT:localhost:$API_PORT"
+  echo "✓ Configured ssh tunnel on port $API_PORT to docker machine '$machine'"
 }
 
 function tunnel-down {
-  pkill -f "ssh.*docker.*$PORT:localhost:$PORT" ||:
+  pkill -f "ssh.*docker.*$API_PORT:localhost:$API_PORT" ||:
 }
 
 function poll-for-k8s {
   echo "❤ Commenced polling Kubernetes api-server for life, this may take a minute"
-  until curl -s http://localhost:$PORT
+  until curl -s http://localhost:$API_PORT
     do echo "❤ Retrying Kubernetes api-server..." && sleep 7
   done
-  curl -s http://localhost:$PORT/version
+  curl -s http://localhost:$API_PORT/version
   printf "\n"; echo "✓ Successfully connected to Kubernetes api-server"
 }
 
