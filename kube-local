@@ -36,6 +36,7 @@ Commands:
     kubectl     Call kubectl with context for local Kubernetes
     logs        View output from containers
     ps          List containers
+    test        Test cluster dns
     up          Create and start a local Kubernetes installation
     version     Print version information and quit
 
@@ -334,6 +335,28 @@ spec:
 EOF
 }
 
+function nginx {
+  $KUBECTL run nginx --image=nginx --port=80
+  $KUBECTL expose deployment nginx --port=80
+  $KUBECTL get svc nginx --template={{.spec.clusterIP}}
+}
+
+function test {
+  busybox
+  echo -n "Waiting for busybox pod to enter 'Running' state"
+  until kubectl get pod busybox -o jsonpath='{.status.phase}' | grep Running >/dev/null 2>&1
+    do sleep 1 && echo -n .
+  done
+  echo .
+
+  $KUBECTL exec busybox -- nslookup kubernetes.default
+  $KUBECTL delete pod busybox
+  echo -n "Waiting for busybox pod to terminate"
+  until ! kubectl get pod busybox -o jsonpath='{.status.phase}' >/dev/null 2>&1
+    do sleep 1 && echo -n .
+  done
+  echo .
+}
 
 function clean-docker-machine { ssh $DOCKER_HOST_IP \
   -ldocker \
@@ -353,7 +376,7 @@ assert-prereqs  # check pre-reqs
 docker-running  # docker engine running ?
 
 case "$1" in
-  busybox|kubeconfig|nginx) $1 ;;
+  busybox|kubeconfig|nginx|test) $1 ;;
 
   down)
     tunnel-down
