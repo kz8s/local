@@ -353,13 +353,7 @@ assert-prereqs  # check pre-reqs
 docker-running  # docker engine running ?
 
 case "$1" in
-  up)
-    k8s-up
-    tunnel-up
-    poll-for-k8s
-    kube-system-namespace
-    kube-dns
-    ;;
+  busybox|kubeconfig|nginx) $1 ;;
 
   down)
     tunnel-down
@@ -368,17 +362,23 @@ case "$1" in
     clean-docker-machine
     ;;
 
-  busybox|kubeconfig|nginx) $1 ;;
-
-  kubectl) shift; $KUBECTL $@ ;;
+  events|logs|ps) (compose-file) | $DOCKER_COMPOSE --file - $1 ;;
 
   help) usage ;;
 
   ip) echo "✓ Docker host ip detected: $DOCKER_HOST_IP" ;;
 
+  kubectl) shift; $KUBECTL $@ ;;
+
+  up)
+    k8s-up
+    tunnel-up
+    poll-for-k8s
+    kube-system-namespace
+    kube-dns
+    ;;
+
   version) version ;;
 
-  events|logs|ps) (compose-file) | $DOCKER_COMPOSE --file - $1 ;;
-
-  *) usage 1 ;;
+  *) usage ;;
 esac
